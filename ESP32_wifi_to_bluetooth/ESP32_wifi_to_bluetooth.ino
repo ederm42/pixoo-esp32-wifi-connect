@@ -26,9 +26,9 @@ void setup() {
   // Connect to Pixoo
   Serial.println("Connecting to Pixoo...");
   if(SerialBT.connect(PIXOO_ADDR, PIXOO_CHANNEL)) {
-    Serial.println("✅ Connected to Pixoo!");
+    Serial.println("SUCCESS: Connected to Pixoo!");
   } else {
-    Serial.println("❌ Connection failed!");
+    Serial.println("ERROR: Connection failed!");
   }
 
   // Connect to Wi-Fi
@@ -45,23 +45,60 @@ void setup() {
   Serial.println("HTTP server started");
 }
 
-void loop() {
-  WiFiClient client = server.available();
-  if(client) {
+// --- Send raw bytes to Pixoo over Bluetooth ---
+size_t sendToPixoo(const std::vector<uint8_t> &data) {
+    if (!SerialBT.connected()) return 0;
+    return SerialBT.write(data.data(), data.size());
+}
+
+// --- Send HTTP response to client ---
+void sendHttpResponse(WiFiClient &client, const String &status, const String &body) {
+    client.printf("HTTP/1.1 %s\r\n", status.c_str());
+    client.println("Content-Type: text/plain");
+    client.printf("Content-Length: %d\r\n", body.length());
+    client.println("Connection: close");
+    client.println();
+    client.print(body);
+}
+
+// --- Handle Pixoo request ---
+void handlePixooRequest(WiFiClient &client) {
     Serial.println("Client connected");
-    // read incoming bytes
+
+    // Read incoming bytes into a vector
     std::vector<uint8_t> buffer;
-    while(client.connected() && client.available()) {
-      buffer.push_back(client.read());
+    while (client.connected() && client.available()) {
+        buffer.push_back(client.read());
     }
 
-    // send to Pixoo
-    if(SerialBT.connected()) {
-      SerialBT.write(buffer.data(), buffer.size());
-      Serial.printf("Sent %d bytes to Pixoo\n", buffer.size());
+    // Determine response
+    String responseStatus;
+    String responseBody;
+
+    if (buffer.empty()) {
+        responseStatus = "400 Bad Request";
+        responseBody = "No data received";
+    } else if (!SerialBT.connected()) {
+        responseStatus = "503 Service Unavailable";
+        responseBody = "Pixoo not connected via Bluetooth";
+    } else {
+        size_t sent = sendToPixoo(buffer);
+        Serial.printf("Sent %d bytes to Pixoo\n", sent);
+
+        responseStatus = "200 OK";
+        responseBody = "Sent " + String(sent) + " bytes to Pixoo";
     }
+
+    // Send HTTP response
+    sendHttpResponse(client, responseStatus, responseBody);
 
     client.stop();
     Serial.println("Client disconnected");
-  }
+}
+
+void loop() {
+    WiFiClient client = server.available();
+    if (client) {
+        handlePixooRequest(client);
+    }
 }
