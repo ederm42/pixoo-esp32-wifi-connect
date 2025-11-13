@@ -1,17 +1,20 @@
-Divoom Pixoo client for Python3
+Divoom Pixoo ESP32 Bluetooth Connection over WiFi 
 ===============================
 
-This small python script provides a way to communicate with a Divoom Pixoo
-over Bluetooth. 
+You own a Divoom Pixoo (16x16) that only supports Bluetooth? 
+You are fed up with how restrictive and invasive the Divoom app is?
+You still want to send data over Wi-Fi to your Pixoo?
 
-This script provides a class able to manage a Pixoo, but you need to create your
-own code to make it work.
+Here is your solution.
+
+Connecting your Pixoo via Bluetooth to an ESP32, while running a webserver on the ESP32 that accepts raw Bluetooth data
+via requests. Python handles the conversion of images to bluetooth and sends the requests containing the data.
 
 Dependencies
 ------------
 
-Use a third-party software to bind your computer with your pixoo (BlueZ + blueman-applet for instance).
-Then you may use this python class to manage your Pixoo.
+Use a third-party software such as [ArduinoIDE](https://www.arduino.cc/en/software/) to upload the Firmware to your 
+ESP32.
 
 How to use this class
 ---------------------
@@ -23,4 +26,8 @@ This class provides many methods to connect and manage a Pixoo device.
 * `draw_anim()`: displays an animation on the Pixoo based on a GIF file (16x16 pixels)
 * `set_system_brightness`: set the global brightness to a specific level (0-100)
 
+Useful Links
+---------------------
+[Official Divoom Bluetooth protocol](https://docin.divoom-gz.com/web/#/5/146)
+[Direct Divoom Pixoo client for Python3](https://github.com/virtualabs/pixoo-client)
 
