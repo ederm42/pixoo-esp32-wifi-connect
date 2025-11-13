@@ -10,6 +10,12 @@ Here is your solution.
 Connecting your Pixoo via Bluetooth to an ESP32, while running a webserver on the ESP32 that accepts raw Bluetooth data
 via requests. Python handles the conversion of images to bluetooth and sends the requests containing the data.
 
+```mermaid
+flowchart LR
+  A[Python Script] -->|HTTP POST over WiFi| B[ESP32]
+  B -->|Bluetooth SPP| C[Pixoo Display]
+```
+
 Dependencies
 ------------
 
@@ -29,5 +35,6 @@ This class provides many methods to connect and manage a Pixoo device.
 Useful Links
 ---------------------
 [Official Divoom Bluetooth protocol](https://docin.divoom-gz.com/web/#/5/146)
+
 [Direct Divoom Pixoo client for Python3](https://github.com/virtualabs/pixoo-client)
 
