@@ -1,6 +1,8 @@
 """
 ESP to Pixoo
 """
+import time
+
 import requests
 from PIL import Image
 from math import log10, ceil
@@ -306,4 +308,5 @@ if __name__ == '__main__':
     pixoo = ESPtoPixoo(ESP32_IP, ESP32_PORT)
 
     pixoo.set_system_brightness(100)
+    time.sleep(0.1)
     pixoo.draw_pic(r"test\smile_16x16.png")
