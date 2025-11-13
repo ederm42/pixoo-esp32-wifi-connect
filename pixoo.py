@@ -1,21 +1,11 @@
 """
-Pixoo 
+ESP to Pixoo
 """
-
-import sys
-import socket
-from time import sleep
-
 import requests
 from PIL import Image
-from binascii import unhexlify, hexlify
 from math import log10, ceil
 
-ESP32_IP = "192.168.1.1"     # Replace with your ESP32 IP
-ESP32_PORT = 80              # Port where the ESP32 HTTP server listens
-
-class Pixoo(object):
-
+class ESPtoPixoo(object):
   CMD_SET_SYSTEM_BRIGHTNESS = 0x74
   CMD_SPP_SET_USER_GIF = 0xb1
   CMD_DRAWING_ENCODE_PIC = 0x5b
@@ -27,27 +17,12 @@ class Pixoo(object):
 
   instance = None
 
-  def __init__(self, mac_address):
+  def __init__(self, esp32_ip, esp32_port):
     """
     Constructor
     """
-    self.mac_address = mac_address
-    self.btsock = None
-
-
-  @staticmethod
-  def get():
-    if Pixoo.instance is None:
-      Pixoo.instance = Pixoo(Pixoo.BDADDR)
-      Pixoo.instance.connect()
-    return Pixoo.instance
-
-  def connect(self):
-    """
-    Connect to SPP.
-    """
-    self.btsock = socket.socket(socket.AF_BLUETOOTH, socket.SOCK_STREAM, socket.BTPROTO_RFCOMM)
-    self.btsock.connect((self.mac_address, 1))
+    self.esp32_ip = esp32_ip
+    self.esp32_port = esp32_port
 
 
   def __spp_frame_checksum(self, args):
@@ -78,13 +53,6 @@ class Pixoo(object):
     # return output buffer
     return frame_buffer+frame_suffix
 
-  def send_bt(self, cmd, args):
-      """
-      Send data to SPP.
-      """
-      spp_frame = self.__spp_frame_encode(cmd, args)
-      if self.btsock is not None:
-          nb_sent = self.btsock.send(bytes(spp_frame))
 
   def send(self, cmd, args):
       """
@@ -95,7 +63,7 @@ class Pixoo(object):
 
       # Send frame to ESP32 over HTTP POST
       try:
-          url = f"http://{ESP32_IP}:{ESP32_PORT}/"
+          url = f"http://{self.esp32_ip}:{self.esp32_port}/"
           resp = requests.post(url, data=bytes(spp_frame))
           if resp.status_code == 200:
               print(f"SUCCESS: Sent {len(spp_frame)} bytes to ESP32")
@@ -109,7 +77,7 @@ class Pixoo(object):
     """
     Set system brightness.
     """
-    self.send(Pixoo.CMD_SET_SYSTEM_BRIGHTNESS, [brightness&0xff])
+    self.send(ESPtoPixoo.CMD_SET_SYSTEM_BRIGHTNESS, [brightness&0xff])
 
 
   def set_box_mode(self, boxmode, visual=0, mode=0):
@@ -238,13 +206,17 @@ class Pixoo(object):
     self.send(0x44, prefix+frame)
 
 
-class PixooMax(Pixoo):
+class ESPtoPixooMax(ESPtoPixoo):
   """
+  UNTESTED
   PixooMax class, derives from Pixoo but does not support animation yet.
   """
   
-  def __init__(self, mac_address):
-    super().__init__(mac_address)
+  def __init__(self, esp32_ip, esp32_port):
+    super().__init__(
+        esp32_ip=esp32_ip,
+        esp32_port=esp32_port,
+    )
 
   def draw_pic(self, filepath):
     """
@@ -328,24 +300,10 @@ class PixooMax(Pixoo):
       print('[!] Image must be square.')
 
 if __name__ == '__main__':
-    pixoo = Pixoo("")
-    pixoo.set_system_brightness(5)
-    pixoo.draw_pic(r"C:\Users\M\PyCharmMiscProject\81.png")
-    #pixoo.connect()
-    #print("here")
-    """
-    if len(sys.argv) >= 3:
-        pixoo_baddr = sys.argv[1]
-        img_path = sys.argv[2]
+    ESP32_IP = "192.168.1.1"  # Replace with your ESP32 IP
+    ESP32_PORT = 80           # Port where the ESP32 HTTP server listens
 
-        pixoo = PixooMax(pixoo_baddr)
-        pixoo.connect()
+    pixoo = ESPtoPixoo(ESP32_IP, ESP32_PORT)
 
-        # mandatory to wait at least 1 second
-        sleep(1)
-
-        # draw image
-        pixoo.draw_pic(img_path)
-    else:
-        print('Usage: %s <Pixoo BT address> <image path>' % sys.argv[0])
-    """
+    pixoo.set_system_brightness(100)
+    pixoo.draw_pic(r"test\smile_16x16.png")
