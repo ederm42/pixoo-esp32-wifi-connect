@@ -5,9 +5,14 @@ Pixoo
 import sys
 import socket
 from time import sleep
+
+import requests
 from PIL import Image
 from binascii import unhexlify, hexlify
 from math import log10, ceil
+
+ESP32_IP = "192.168.1.1"     # Replace with your ESP32 IP
+ESP32_PORT = 80              # Port where the ESP32 HTTP server listens
 
 class Pixoo(object):
 
@@ -73,14 +78,31 @@ class Pixoo(object):
     # return output buffer
     return frame_buffer+frame_suffix
 
+  def send_bt(self, cmd, args):
+      """
+      Send data to SPP.
+      """
+      spp_frame = self.__spp_frame_encode(cmd, args)
+      if self.btsock is not None:
+          nb_sent = self.btsock.send(bytes(spp_frame))
 
   def send(self, cmd, args):
-    """
-    Send data to SPP.
-    """
-    spp_frame = self.__spp_frame_encode(cmd, args)
-    if self.btsock is not None:
-      nb_sent = self.btsock.send(bytes(spp_frame))
+      """
+      Send data to Pixoo via ESP32 bridge over Wi-Fi instead of direct SPP.
+      """
+      # Encode the SPP frame as usual
+      spp_frame = self.__spp_frame_encode(cmd, args)
+
+      # Send frame to ESP32 over HTTP POST
+      try:
+          url = f"http://{ESP32_IP}:{ESP32_PORT}/"
+          resp = requests.post(url, data=bytes(spp_frame))
+          if resp.status_code == 200:
+              print(f"SUCCESS: Sent {len(spp_frame)} bytes to ESP32")
+          else:
+              print(f"ERROR: ESP32 responded with status {resp.status_code}")
+      except Exception as e:
+          print(f"ERROR: Failed to send to ESP32: {e}")
 
 
   def set_system_brightness(self, brightness):
@@ -306,17 +328,24 @@ class PixooMax(Pixoo):
       print('[!] Image must be square.')
 
 if __name__ == '__main__':
-  if len(sys.argv) >= 3:
-    pixoo_baddr = sys.argv[1]
-    img_path = sys.argv[2]
+    pixoo = Pixoo("")
+    pixoo.set_system_brightness(5)
+    pixoo.draw_pic(r"C:\Users\M\PyCharmMiscProject\81.png")
+    #pixoo.connect()
+    #print("here")
+    """
+    if len(sys.argv) >= 3:
+        pixoo_baddr = sys.argv[1]
+        img_path = sys.argv[2]
 
-    pixoo = PixooMax(pixoo_baddr)
-    pixoo.connect()
+        pixoo = PixooMax(pixoo_baddr)
+        pixoo.connect()
 
-    # mandatory to wait at least 1 second
-    sleep(1)
+        # mandatory to wait at least 1 second
+        sleep(1)
 
-    # draw image
-    pixoo.draw_pic(img_path)
-  else:
-    print('Usage: %s <Pixoo BT address> <image path>' % sys.argv[0])
+        # draw image
+        pixoo.draw_pic(img_path)
+    else:
+        print('Usage: %s <Pixoo BT address> <image path>' % sys.argv[0])
+    """
