@@ -163,7 +163,7 @@ class ESPtoPixoo(object):
       frame_header = [0xAA, frame_size&0xff, (frame_size>>8)&0xff, timecode&0xff, (timecode>>8)&0xff, 0, nb_colors]
       frame = frame_header + palette + pixel_data
       frames += frame
-      timecode += speed
+      timecode = speed
 
     # send animation
     nchunks = ceil(len(frames)/200.)
@@ -185,7 +185,7 @@ class ESPtoPixoo(object):
       frame_header = [0xAA, frame_size&0xff, (frame_size>>8)&0xff, timecode&0xff, (timecode>>8)&0xff, 0, nb_colors]
       frame = frame_header + palette + pixel_data
       frames += frame
-      timecode += speed
+      timecode = speed
       n += 1
     
     # send animation
