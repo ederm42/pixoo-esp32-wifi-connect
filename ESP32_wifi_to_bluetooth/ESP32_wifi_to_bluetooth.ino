@@ -67,8 +67,14 @@ void handlePixooRequest(WiFiClient &client) {
 
     // Read incoming bytes into a vector
     std::vector<uint8_t> buffer;
-    while (client.connected() && client.available()) {
-        buffer.push_back(client.read());
+    unsigned long last = millis();
+    while (client.connected()) {
+        while (client.available()) {
+            buffer.push_back(client.read());
+            last = millis();
+        }
+        if (millis() - last > 50) break; // simple timeout
+        delay(1);
     }
 
     // Determine response
