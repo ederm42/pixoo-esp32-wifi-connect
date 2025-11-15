@@ -73,7 +73,7 @@ void handlePixooRequest(WiFiClient &client) {
             buffer.push_back(client.read());
             last = millis();
         }
-        if (millis() - last > 50) break; // simple timeout
+        if (millis() - last > 100) break; // simple timeout
         delay(1);
     }
 
