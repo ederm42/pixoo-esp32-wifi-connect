@@ -6,6 +6,7 @@ BluetoothSerial SerialBT;
 // --- Pixoo Bluetooth ---
 uint8_t PIXOO_ADDR[6] = {0xAB, 0xCD, 0x12, 0x34, 0x56, 0x78};  // AB:CD:12:34:56:78 (MAC Address)
 const uint8_t PIXOO_CHANNEL = 2;
+const uint8_t PIXOO_BT_MAX_RETRIES = 10;
 
 // --- Wi-Fi credentials ---
 const char* WIFI_SSID = "YourWifiSSID";
@@ -25,10 +26,21 @@ void setup() {
 
   // Connect to Pixoo
   Serial.println("Connecting to Pixoo...");
-  if(SerialBT.connect(PIXOO_ADDR, PIXOO_CHANNEL)) {
-    Serial.println("SUCCESS: Connected to Pixoo!");
-  } else {
-    Serial.println("ERROR: Connection failed!");
+  
+  uint8_t attempts = 0;
+  while(!SerialBT.connected() && attempts < PIXOO_BT_MAX_RETRIES) {
+    if(SerialBT.connect(PIXOO_ADDR, PIXOO_CHANNEL)) {
+      Serial.println("SUCCESS: Connected to Pixoo!");
+    } else {
+      if(attempts + 1 == PIXOO_BT_MAX_RETRIES) {
+        Serial.println("ERROR: Max retries reached. Could not connect to Pixoo.");
+      } else {
+        Serial.printf("ERROR: Connection failed! Retrying... (attempt %d/%d)\n",
+                      attempts + 1, PIXOO_BT_MAX_RETRIES);
+      }
+      attempts++;
+      delay(500);
+    }
   }
 
   // Connect to Wi-Fi
